@@ -1,7 +1,7 @@
 package cn.endv.mytestapp;
 
 
-import com.alibaba.fastjson.annotation.JSONField;
+//import com.alibaba.fastjson.annotation.JSONField;
 
 import java.sql.Timestamp;
 import java.util.Date;
@@ -16,7 +16,7 @@ public class Test1 {
     private double decimalx;  //
     private boolean booleanx = true;  //
     //    @JsonSerialize(using = CustomDateSerializer.class)
-    @JSONField(format = "yyyy-MM-dd HH:mm:ss")
+//    @JSONField(format = "yyyy-MM-dd HH:mm:ss")
     private Date datetimex = new Date();  //
     private String textx;  //
     private String longtextx;  //
@@ -51,7 +51,7 @@ public class Test1 {
         this.fotlx = fotlx;
     }
 
-    @JSONField(format = "yyyy-MM-dd HH:mm:ss")
+    //    @JSONField(format = "yyyy-MM-dd HH:mm:ss")
     public Date getDatex() {
         return this.datex;
     }

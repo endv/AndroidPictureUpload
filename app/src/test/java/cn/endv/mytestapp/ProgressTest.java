@@ -22,8 +22,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import cn.endv.mytestapp.cpr.ProgressHelper;
-import cn.endv.mytestapp.cpr.ProgressListener;
+import cn.endv.mytestapp.progress.ProgressHelper;
+import cn.endv.mytestapp.progress.ProgressListener;
 import okhttp3.Call;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;

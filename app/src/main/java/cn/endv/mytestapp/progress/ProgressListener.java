@@ -1,4 +1,4 @@
-package cn.endv.mytestapp.cpr;
+package cn.endv.mytestapp.progress;
 
 /**
  * 进度回调

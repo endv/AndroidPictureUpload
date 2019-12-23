@@ -4,13 +4,9 @@ import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Matrix;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
@@ -33,20 +29,14 @@ import com.yalantis.ucrop.UCrop;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
-import cn.endv.mytestapp.cpr.ProgressHelper;
-import cn.endv.mytestapp.cpr.ProgressUIListener;
-import cn.endv.mytestapp.sample.ProgressMainActivity;
+import cn.endv.mytestapp.progress.ProgressHelper;
+import cn.endv.mytestapp.progress.ProgressUIListener;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.MediaType;
@@ -57,24 +47,21 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 
+//import cn.endv.mytestapp.sample.ProgressMainActivity;
+
 public class MainActivity extends AppCompatActivity implements
         NavigationView.OnNavigationItemSelectedListener {
     private static final int REQUEST_CODE_READ_EXTERNAL_STORAGE = 56;
     public static int PICK_IMAGE_REQUEST = 21;
-    String service_url = "";
     boolean isImageChanged = false;
     boolean isImageRemoved = false;
     Button updateItemCategory;
-    //    String service_url2 =  "http://192.168.1.100:8081";
-    String service_url2 = "";
     ImageView resultView;
-    String url = "https://www.endv.cn/upload_file.php";
+    String serverUrl = "https://www.endv.cn/upload_file.php";
+    String service_url = "";//远程接口路径
+    String localfilepathl = "";
     private OkHttpClient okHttpClient;
     private NavigationView navigationView;
-    //    private AppBarConfiguration mAppBarConfiguration;
-    private TextView mTvName;   // NavigationView上的名字
-    private ImageView mImgNav;  // NavigationView上的头像
-    //    ImageService itemService;
     private DrawerLayout mDrawer;
     private Button upload, download;
     private TextView uploadInfo, downloadInfo;
@@ -90,23 +77,19 @@ public class MainActivity extends AppCompatActivity implements
                 showToastMessage("没有更新项目 !");
             } else if (response.code() == 417) {
                 showToastMessage("图片大于 2 MB.");
-//                    item.setItemImageURL(null);
             } else if (response.code() == 404) {
                 showToastMessage("服务器接口错误.");
-//                    item.setItemImageURL(null);
             } else if (response.code() == 500) {
                 showToastMessage("服务器目录无写入权限.");
-//                    item.setItemImageURL(null);
             } else {
                 showToastMessage("图片代码." + response.code());
                 showToastMessage("图片更新成功 ");
-//                    item.setItemImageURL(null);
             }
-            File file = new File(service_url2);
+            File file = new File(localfilepathl);
             if (file != null) {
                 file.delete();
                 showToastMessage("文件已删除 !");
-                service_url2 = "";
+                localfilepathl = "";
                 return;
             }
         }
@@ -114,7 +97,6 @@ public class MainActivity extends AppCompatActivity implements
         @Override
         public void onFailure(@NotNull Call call, @NotNull IOException e) {
             showToastMessage("图片更新失败 !");
-//            setResult(e.getCause().hashCode(), new Intent().putExtra("noFaceDetection", false));
         }
 
 
@@ -226,88 +208,6 @@ public class MainActivity extends AppCompatActivity implements
         }
     };
 
-    //三、图片按比例大小压缩方法（根据Bitmap图片压缩）
-    public static Bitmap compressByProportion(Bitmap image) {
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        image.compress(Bitmap.CompressFormat.JPEG, 100, baos);
-        if (baos.toByteArray().length / 1024 > 1024) {//判断如果图片大于1M,进行压缩避免在生成图片（BitmapFactory.decodeStream）时溢出
-            baos.reset();//重置baos即清空baos
-            image.compress(Bitmap.CompressFormat.JPEG, 50, baos);//这里压缩50%，把压缩后的数据存放到baos中
-        }
-        ByteArrayInputStream isBm = new ByteArrayInputStream(baos.toByteArray());
-        BitmapFactory.Options newOpts = new BitmapFactory.Options();
-        //开始读入图片，此时把options.inJustDecodeBounds 设回true了
-        newOpts.inJustDecodeBounds = true;
-        Bitmap bitmap = BitmapFactory.decodeStream(isBm, null, newOpts);
-        newOpts.inJustDecodeBounds = false;
-        int w = newOpts.outWidth;
-        int h = newOpts.outHeight;
-        //现在主流手机比较多是800*480分辨率，所以高和宽我们设置为
-        float hh = 800f;//这里设置高度为800f
-        float ww = 480f;//这里设置宽度为480f
-        //缩放比。由于是固定比例缩放，只用高或者宽其中一个数据进行计算即可
-        int be = 1;//be=1表示不缩放
-        if (w > h && w > ww) {//如果宽度大的话根据宽度固定大小缩放
-            be = (int) (newOpts.outWidth / ww);
-        } else if (w < h && h > hh) {//如果高度高的话根据宽度固定大小缩放
-            be = (int) (newOpts.outHeight / hh);
-        }
-        if (be <= 0)
-            be = 1;
-        newOpts.inSampleSize = be;//设置缩放比例
-        //重新读入图片，注意此时已经把options.inJustDecodeBounds 设回false了
-        isBm = new ByteArrayInputStream(baos.toByteArray());
-        bitmap = BitmapFactory.decodeStream(isBm, null, newOpts);
-        return compressImageByQuality(bitmap);//压缩好比例大小后再进行质量压缩
-    }
-
-    //一、质量压缩法
-    public static Bitmap compressImageByQuality(Bitmap image) {
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        image.compress(Bitmap.CompressFormat.JPEG, 100, baos);//质量压缩方法，这里100表示不压缩，把压缩后的数据存放到baos中
-        int options = 100;
-        while (baos.toByteArray().length / 1024 > 100) { //循环判断如果压缩后图片是否大于100kb,大于继续压缩
-            baos.reset();//重置baos即清空baos
-            image.compress(Bitmap.CompressFormat.JPEG, options, baos);//这里压缩options%，把压缩后的数据存放到baos中
-            options -= 10;//每次都减少10
-        }
-        ByteArrayInputStream isBm = new ByteArrayInputStream(baos.toByteArray());//把压缩后的数据baos存放到ByteArrayInputStream中
-        Bitmap bitmap = BitmapFactory.decodeStream(isBm, null, null);//把ByteArrayInputStream数据生成图片
-        return bitmap;
-    }
-
-    // 字节数组到文件的过程
-    public static void ByteArrayToFile(byte[] data, String newFileNmae) {
-        //选择源
-        File file = new File(newFileNmae);
-        //选择流
-        FileOutputStream fos = null;
-        ByteArrayInputStream bais = null;
-        try {
-            bais = new ByteArrayInputStream(data);
-            fos = new FileOutputStream(file);
-            int temp;
-            byte[] bt = new byte[1024 * 10];
-            while ((temp = bais.read(bt)) != -1) {
-                fos.write(bt, 0, temp);
-            }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            //关流
-            try {
-                if (null != fos)
-                    fos.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
     public static void clearCache(Context context) {
         File file = new File(context.getCacheDir().getPath() + "/" + "SampleCropImage.jpeg");
         file.delete();
@@ -326,17 +226,12 @@ public class MainActivity extends AppCompatActivity implements
                 .connectTimeout(1000, TimeUnit.MINUTES)
                 .readTimeout(1000, TimeUnit.MINUTES)
                 .writeTimeout(1000, TimeUnit.MINUTES)
-
-//                .readTimeout(60, TimeUnit.SECONDS)
-//                .connectTimeout(10, TimeUnit.SECONDS)
-//                .writeTimeout(120, TimeUnit.SECONDS)
                 .build();
         updateItemCategory = findViewById(R.id.updateItemCategory);
         resultView = findViewById(R.id.uploadImage);
         navigationView = findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
         navigationView.setCheckedItem(R.id.nav_home);
-        ((App) getApplication()).setNavigationView(mDrawer);
     }
 
     private void initView() {
@@ -362,109 +257,45 @@ public class MainActivity extends AppCompatActivity implements
 
     //  更新图片
     public void updateButtonClick(View v) {
-        File file = new File(service_url2);
+        File file = new File(localfilepathl);
         if (file == null) {
             showToastMessage("文件不存在 !");
             return;
         }
-        //获取图片的宽和高，并不把他加载到内存当中
-        BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inJustDecodeBounds = true;
-        Bitmap bitmap = BitmapFactory.decodeFile(service_url2, options);
-//        int width = bitmap.getWidth();
-//        int height = bitmap.getHeight();
-        //重点
-        Bitmap bitma2 = compressByProportion(bitmap);
-        ByteArrayToFile(bitma2.getNinePatchChunk(), service_url2);
         RequestBody requestBody = new MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
-                .addFormDataPart("file", service_url2, RequestBody.create(file, MediaType.parse("image/jpg")))
+                .addFormDataPart("file", localfilepathl, RequestBody.create(file, MediaType.parse("image/jpg")))
                 .addFormDataPart("userid", "18800608355")
                 .build();
 //
         Request request = new Request.Builder()
-                .url(url)
+                .url(serverUrl)
                 .post(requestBody)
                 .build();
 
-
         okHttpClient.newCall(request).enqueue(callback_upload);
 
-//        file.getParentFile().mkdirs();
-//        file.createNewFile();
-    }
-
-    public File compressImage(Bitmap bitmap) {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);//质量压缩方法，这里100表示不压缩，把压缩后的数据存放到baos中
-        int options = 100;
-        while (baos.toByteArray().length / 1024 > 20) {  //循环判断如果压缩后图片是否大于20kb,大于继续压缩 友盟缩略图要求不大于18kb
-            baos.reset();//重置baos即清空baos
-            options -= 10;//每次都减少10
-            bitmap.compress(Bitmap.CompressFormat.JPEG, options, baos);//这里压缩options%，把压缩后的数据存放到baos中
-            long length = baos.toByteArray().length;
-        }
-
-        SimpleDateFormat format = new SimpleDateFormat("yyyyMMddHHmmss");
-        Date date = new Date(System.currentTimeMillis());
-        //图片名
-        String filename = format.format(date);
-
-        File file = new File(Environment.getExternalStorageDirectory(), filename + ".png");
-        try {
-            FileOutputStream fos = new FileOutputStream(file);
-            try {
-                fos.write(baos.toByteArray());
-                fos.flush();
-                fos.close();
-            } catch (IOException e) {
-
-                e.printStackTrace();
-            }
-        } catch (FileNotFoundException e) {
-
-            e.printStackTrace();
-        }
-
-        Log.d("=-=-=-=-=-", "compressImage: " + file);
-        // recycleBitmap(bitmap);
-        return file;
-    }
-
-    public Bitmap getNewBitmap(Bitmap bitmap, int newWidth, int newHeight) {
-        // 获得图片的宽高.
-        int width = bitmap.getWidth();
-        int height = bitmap.getHeight();
-        // 计算缩放比例.
-        float scaleWidth = ((float) newWidth) / width;
-        float scaleHeight = ((float) newHeight) / height;
-        // 取得想要缩放的matrix参数.
-        Matrix matrix = new Matrix();
-        matrix.postScale(scaleWidth, scaleHeight);
-        // 得到新的图片.
-        Bitmap newBitmap = Bitmap.createBitmap(bitmap, 0, 0, width, height, matrix, true);
-        return newBitmap;
     }
 
     //  更新文件
     private void upload() {
         uploadInfo.setText("start upload");
-        if (service_url2 == "") {
+        if (localfilepathl == "") {
             showToastMessage("路径为空 !");
             return;
         }
-        File apkFile = new File(service_url2);
+        File apkFile = new File(localfilepathl);
 
         if (apkFile == null) {
             showToastMessage("文件不存在 !");
             return;
         }
         Request.Builder builder = new Request.Builder();
-        builder.url(url);
+        builder.url(serverUrl);
 
         MultipartBody.Builder bodyBuilder = new MultipartBody.Builder().setType(MultipartBody.FORM);
-        bodyBuilder.addFormDataPart("file", service_url2, RequestBody.create(apkFile, null))
-                .addFormDataPart("userid", "18800608355");
+        bodyBuilder.addFormDataPart("file", localfilepathl, RequestBody.create(apkFile, null))
+                .addFormDataPart("userid", "1880000000");
         MultipartBody build = bodyBuilder.build();
 
         RequestBody requestBody = ProgressHelper.withProgress(build, new ProgressUIListener() {
@@ -501,7 +332,7 @@ public class MainActivity extends AppCompatActivity implements
 
         builder.post(requestBody);
         Request request = new Request.Builder()
-                .url(url)
+                .url(serverUrl)
                 .post(requestBody)
                 .build();
 
@@ -551,7 +382,7 @@ public class MainActivity extends AppCompatActivity implements
                     System.out.println("nav_tools");
                 } else if (id == R.id.nav_share) {
                     System.out.println("nav_share");
-                    intent.setClass(MainActivity.this, ProgressMainActivity.class);
+//                    intent.setClass(MainActivity.this, ProgressMainActivity.class);
                 } else if (id == R.id.nav_send) {
                     System.out.println("nav_send");
 
@@ -565,6 +396,7 @@ public class MainActivity extends AppCompatActivity implements
         return true;
     }
 
+    // 加载远程图片
     void loadImage(String imagePath) {
         String iamgepath = service_url + "/api/v1/Staff/Image/" + imagePath;
         Picasso.get()
@@ -596,8 +428,8 @@ public class MainActivity extends AppCompatActivity implements
             Uri filePath = result.getData();
             if (filePath != null) {
                 try {
-                    service_url2 = PathUtils.getPath(this, filePath);
-                    System.out.println("打印路径" + service_url2);
+                    localfilepathl = PathUtils.getPath(this, filePath);
+                    System.out.println("打印路径" + localfilepathl);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
