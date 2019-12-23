@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.drawerlayout.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/drawer_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    tools:openDrawer="start">
+    <!--    <FrameLayout-->
+    <!--        android:id="@+id/main_fl_container"-->
+    <!--        android:layout_width="match_parent"-->
+    <!--        android:layout_marginBottom="48dp"-->
+    <!--        android:layout_height="match_parent" >-->
+
+    <!--&lt;!&ndash;        <ImageView&ndash;&gt;-->
+    <!--&lt;!&ndash;            android:id="@+id/imageView"&ndash;&gt;-->
+    <!--&lt;!&ndash;            android:layout_width="231dp"&ndash;&gt;-->
+    <!--&lt;!&ndash;            android:layout_height="wrap_content"&ndash;&gt;-->
+    <!--&lt;!&ndash;            app:srcCompat="@drawable/ic_launcher_background" />&ndash;&gt;-->
+    <!--    </FrameLayout>-->
+    <com.google.android.material.navigation.NavigationView
+        android:id="@+id/nav_view"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:fitsSystemWindows="true"
+        app:headerLayout="@layout/nav_header_main"
+        app:menu="@menu/activity_main_drawer" />
+
+    <include layout="@layout/content_add_item_category" />
+
+
+    <!--    <include layout="@layout/content_add_item_category" />-->
+
+
+    <!--    <include-->
+    <!--        layout="@layout/app_bar_main"-->
+    <!--        android:layout_width="match_parent"-->
+    <!--        android:layout_height="match_parent" />-->
+
+    <!--    <include layout="@layout/content_main" />-->
+</androidx.drawerlayout.widget.DrawerLayout>
